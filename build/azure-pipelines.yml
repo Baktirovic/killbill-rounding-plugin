@@ -41,6 +41,6 @@ steps:
       goals: deploy
       options: >-
         -DskipTests
-        -DaltDeploymentRepository=3rpFeed::default::$(feedUrl)
+        -DaltDeploymentRepository={feed}:default::$(feedUrl)
       javaHomeOption: JDKVersion
       jdkVersionOption: '1.11'
