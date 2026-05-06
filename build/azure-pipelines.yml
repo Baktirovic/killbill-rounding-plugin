@@ -1,0 +1,46 @@
+trigger:
+  branches:
+    include:
+      - master
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  mavenCacheFolder: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: -Dmaven.repo.local=$(mavenCacheFolder)
+  feedUrl: https://pkgs.dev.azure.com/{company}/[project]/_packaging/{feed}/maven/v1
+
+steps:
+  - task: Cache@2
+    displayName: Cache Maven packages
+    inputs:
+      key: 'maven | "$(Agent.OS)" | pom.xml'
+      restoreKeys: maven | "$(Agent.OS)"
+      path: $(mavenCacheFolder)
+
+  - task: Maven@3
+    displayName: Run tests
+    inputs:
+      mavenPomFile: pom.xml
+      goals: test
+      publishJUnitResults: true
+      testResultsFiles: '**/surefire-reports/TEST-*.xml'
+      javaHomeOption: JDKVersion
+      jdkVersionOption: '1.11'
+
+  - task: MavenAuthenticate@0
+    displayName: Authenticate with Azure Artifacts
+    inputs:
+      artifactsFeeds: 3rpFeed
+
+  - task: Maven@3
+    displayName: Deploy to Azure Artifacts
+    inputs:
+      mavenPomFile: pom.xml
+      goals: deploy
+      options: >-
+        -DskipTests
+        -DaltDeploymentRepository=3rpFeed::default::$(feedUrl)
+      javaHomeOption: JDKVersion
+      jdkVersionOption: '1.11'

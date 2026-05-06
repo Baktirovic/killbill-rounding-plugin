@@ -22,6 +22,20 @@ Only currencies explicitly listed in the `increments` configuration are affected
 
 > **Note:** Finland uses EUR, so all EUR accounts will be rounded. If you have non-Finnish EUR customers, adjust the `increments` config or remove EUR entirely.
 
+## Running Tests
+
+    mvn test
+
+Test results are printed to the console. The full HTML report is written to `target/surefire-reports/index.html`.
+
+To run a single test class:
+
+    mvn test -Dtest=RoundingInvoicePluginTest
+
+To run one specific method:
+
+    mvn test -Dtest=RoundingInvoicePluginTest#parseIncrements_validEntries
+
 ## Build
 
     mvn clean package -DskipTests

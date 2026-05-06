@@ -103,7 +103,7 @@ public class RoundingInvoicePlugin extends PluginInvoicePluginApi {
 
     // Parses "SEK=1,EUR=0.05,NOK=1,ISK=1" into a Currency -> increment map.
     // Invalid or unrecognized entries are skipped with a warning.
-    private static Map<Currency, BigDecimal> parseIncrements(final String raw) {
+    static Map<Currency, BigDecimal> parseIncrements(final String raw) {
         final Map<Currency, BigDecimal> result = new HashMap<>();
         if (raw == null || raw.trim().isEmpty()) {
             return result;
@@ -129,7 +129,7 @@ public class RoundingInvoicePlugin extends PluginInvoicePluginApi {
         return result;
     }
 
-    private static BigDecimal roundToIncrement(final BigDecimal amount, final BigDecimal increment) {
+    static BigDecimal roundToIncrement(final BigDecimal amount, final BigDecimal increment) {
         return amount.divide(increment, 0, RoundingMode.HALF_UP).multiply(increment);
     }
 
