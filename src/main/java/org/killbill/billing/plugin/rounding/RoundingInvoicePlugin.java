@@ -84,17 +84,28 @@ public class RoundingInvoicePlugin extends PluginInvoicePluginApi {
             return new PluginAdditionalItemsResult(additionalItems, null);
         }
 
-        logger.info("Invoice {} currency={} total={} rounded={} adding rounding adjustment={}",
-                invoice.getId(), currency, currentTotal, roundedTotal, roundingDiff);
-
         final String description = getConfigValue(ROUNDING_DESCRIPTION_KEY, DEFAULT_DESCRIPTION);
+
+        // On adjustments the invoice already carries the original rounding charge.
+        // Only emit the delta so we don't duplicate an unchanged rounding amount.
+        final BigDecimal existingRounding = getExistingRoundingTotal(invoice, description);
+        final BigDecimal additionalRounding = roundingDiff.subtract(existingRounding);
+
+        if (additionalRounding.compareTo(BigDecimal.ZERO) == 0) {
+            logger.debug("Invoice {} existing rounding {} already matches required rounding, no adjustment needed",
+                    invoice.getId(), existingRounding);
+            return new PluginAdditionalItemsResult(additionalItems, null);
+        }
+
+        logger.info("Invoice {} currency={} total={} rounded={} existingRounding={} addingRounding={}",
+                invoice.getId(), currency, currentTotal, roundedTotal, existingRounding, additionalRounding);
 
         additionalItems.add(new RoundingInvoiceItem(
                 UUID.randomUUID(),
                 invoice.getId(),
                 invoice.getAccountId(),
                 invoice.getInvoiceDate(),
-                roundingDiff,
+                additionalRounding,
                 currency,
                 description
         ));
@@ -145,6 +156,18 @@ public class RoundingInvoicePlugin extends PluginInvoicePluginApi {
                 continue;
             }
             total = total.add(item.getAmount());
+        }
+        return total;
+    }
+
+    private BigDecimal getExistingRoundingTotal(final Invoice invoice, final String roundingDescription) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (final InvoiceItem item : invoice.getInvoiceItems()) {
+            if (InvoiceItemType.EXTERNAL_CHARGE.equals(item.getInvoiceItemType())
+                    && roundingDescription.equals(item.getDescription())
+                    && item.getAmount() != null) {
+                total = total.add(item.getAmount());
+            }
         }
         return total;
     }
